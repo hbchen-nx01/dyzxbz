@@ -160,7 +160,7 @@ export default function PersonnelManagement() {
       姓名: p.name,
       工号: p.employeeId,
       部门: p.department,
-      职位: p.position,
+      技能等级: p.skillLevel,
       电话: p.phone,
       邮箱: p.email,
       入职日期: p.hireDate,

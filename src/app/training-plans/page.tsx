@@ -19,9 +19,9 @@ export default function TrainingPlans() {
     startDate: '',
     endDate: '',
     location: '',
-    instructor: '',
+    trainer: '',
     participants: '',
-    status: 'scheduled' as 'scheduled' | 'in_progress' | 'completed' | 'cancelled',
+    status: 'planned' as 'planned' | 'ongoing' | 'completed' | 'cancelled',
     assessmentMethod: '',
     evaluationResults: '',
     notes: '',
@@ -50,7 +50,7 @@ export default function TrainingPlans() {
       (statusFilter === 'all' || plan.status === statusFilter) &&
       (plan.planNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
         plan.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        plan.instructor.toLowerCase().includes(searchTerm.toLowerCase()))
+        plan.trainer.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   const handleOpenModal = (plan?: TrainingPlan) => {
@@ -63,8 +63,8 @@ export default function TrainingPlans() {
         startDate: plan.startDate,
         endDate: plan.endDate,
         location: plan.location,
-        instructor: plan.instructor,
-        participants: plan.participants,
+        trainer: plan.trainer,
+        participants: plan.participants.join(','),
         status: plan.status,
         assessmentMethod: plan.assessmentMethod || '',
         evaluationResults: plan.evaluationResults || '',
@@ -79,9 +79,9 @@ export default function TrainingPlans() {
         startDate: '',
         endDate: '',
         location: '',
-        instructor: '',
+        trainer: '',
         participants: '',
-        status: 'scheduled',
+        status: 'planned' as 'planned' | 'ongoing' | 'completed' | 'cancelled',
         assessmentMethod: '',
         evaluationResults: '',
         notes: '',
@@ -136,9 +136,9 @@ export default function TrainingPlans() {
       开始日期: plan.startDate,
       结束日期: plan.endDate,
       地点: plan.location,
-      培训师: plan.instructor,
-      参与者: plan.participants,
-      状态: plan.status === 'completed' ? '已完成' : plan.status === 'in_progress' ? '进行中' : plan.status === 'scheduled' ? '已计划' : '已取消',
+      培训师: plan.trainer,
+      参与者: plan.participants.join(', '),
+      状态: plan.status === 'completed' ? '已完成' : plan.status === 'ongoing' ? '进行中' : plan.status === 'planned' ? '计划中' : '已取消',
       评估方式: plan.assessmentMethod || '',
       评估结果: plan.evaluationResults || '',
     }));
@@ -149,9 +149,9 @@ export default function TrainingPlans() {
     switch (status) {
       case 'completed':
         return 'bg-green-100 text-green-800';
-      case 'in_progress':
+      case 'ongoing':
         return 'bg-blue-100 text-blue-800';
-      case 'scheduled':
+      case 'planned':
         return 'bg-purple-100 text-purple-800';
       case 'cancelled':
         return 'bg-red-100 text-red-800';
@@ -164,10 +164,10 @@ export default function TrainingPlans() {
     switch (status) {
       case 'completed':
         return '已完成';
-      case 'in_progress':
+      case 'ongoing':
         return '进行中';
-      case 'scheduled':
-        return '已计划';
+      case 'planned':
+        return '计划中';
       case 'cancelled':
         return '已取消';
       default:
@@ -207,16 +207,16 @@ export default function TrainingPlans() {
             </div>
             <div>
               <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              >
-                <option value="all">全部状态</option>
-                <option value="scheduled">已计划</option>
-                <option value="in_progress">进行中</option>
-                <option value="completed">已完成</option>
-                <option value="cancelled">已取消</option>
-              </select>
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                >
+                  <option value="all">全部状态</option>
+                  <option value="planned">计划中</option>
+                  <option value="ongoing">进行中</option>
+                  <option value="completed">已完成</option>
+                  <option value="cancelled">已取消</option>
+                </select>
             </div>
             <div>
               <button
@@ -277,7 +277,7 @@ export default function TrainingPlans() {
 
                 <div>
                   <h4 className="font-semibold text-gray-900 mb-1">培训师</h4>
-                  <p className="text-gray-700">{plan.instructor}</p>
+                  <p className="text-gray-700">{plan.trainer}</p>
                 </div>
 
                 <div>
@@ -288,7 +288,7 @@ export default function TrainingPlans() {
                 {plan.participants && (
                   <div className="bg-green-50 p-3 rounded-lg">
                     <p className="text-sm text-gray-700">
-                      <span className="font-medium">参与者:</span> {plan.participants}
+                      <span className="font-medium">参与者:</span> {plan.participants.join(', ')}
                     </p>
                   </div>
                 )}
@@ -343,8 +343,8 @@ export default function TrainingPlans() {
                       onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                     >
-                      <option value="scheduled">已计划</option>
-                      <option value="in_progress">进行中</option>
+                      <option value="planned">计划中</option>
+                      <option value="ongoing">进行中</option>
                       <option value="completed">已完成</option>
                       <option value="cancelled">已取消</option>
                     </select>
@@ -374,8 +374,8 @@ export default function TrainingPlans() {
                     <input
                       type="text"
                       required
-                      value={formData.instructor}
-                      onChange={(e) => setFormData({ ...formData, instructor: e.target.value })}
+                      value={formData.trainer}
+                      onChange={(e) => setFormData({ ...formData, trainer: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                     />
                   </div>

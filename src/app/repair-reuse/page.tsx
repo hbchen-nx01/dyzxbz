@@ -2,28 +2,25 @@
 
 import { useState, useEffect } from 'react';
 import { Wrench, Plus, Edit, Trash2, Download, Search, X } from 'lucide-react';
-import { RepairReuse } from '@/types';
+import { RecycleRecord } from '@/types';
 import { exportToExcel, formatDate, formatDateTime } from '@/lib/utils';
 import Navbar from '@/components/Navbar';
 
 export default function RepairReuse() {
-  const [records, setRecords] = useState<RepairReuse[]>([]);
+  const [records, setRecords] = useState<RecycleRecord[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingRecord, setEditingRecord] = useState<RepairReuse | null>(null);
+  const [editingRecord, setEditingRecord] = useState<RecycleRecord | null>(null);
   const [formData, setFormData] = useState({
     recordNumber: '',
-    equipmentName: '',
-    equipmentType: '',
-    faultDescription: '',
-    repairMethod: '',
-    repairDate: '',
+    itemName: '',
+    itemCode: '',
+    originalValue: '',
     repairCost: '',
-    estimatedSavings: '',
-    repairPerson: '',
-    status: 'completed' as 'pending' | 'in_progress' | 'completed' | 'failed',
-    notes: '',
+    savedValue: '',
+    repairDate: '',
+    repairedBy: '',
+    description: '',
   });
 
   useEffect(() => {
@@ -46,42 +43,37 @@ export default function RepairReuse() {
 
   const filteredRecords = records.filter(
     (record) =>
-      (statusFilter === 'all' || record.status === statusFilter) &&
       (record.recordNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        record.equipmentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        record.repairPerson.toLowerCase().includes(searchTerm.toLowerCase()))
+        record.itemName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        record.repairedBy.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  const handleOpenModal = (record?: RepairReuse) => {
+  const handleOpenModal = (record?: RecycleRecord) => {
     if (record) {
       setEditingRecord(record);
       setFormData({
         recordNumber: record.recordNumber,
-        equipmentName: record.equipmentName,
-        equipmentType: record.equipmentType,
-        faultDescription: record.faultDescription,
-        repairMethod: record.repairMethod,
-        repairDate: record.repairDate,
+        itemName: record.itemName,
+        itemCode: record.itemCode,
+        originalValue: record.originalValue.toString(),
         repairCost: record.repairCost.toString(),
-        estimatedSavings: record.estimatedSavings.toString(),
-        repairPerson: record.repairPerson,
-        status: record.status,
-        notes: record.notes || '',
+        savedValue: record.savedValue.toString(),
+        repairDate: record.repairDate,
+        repairedBy: record.repairedBy,
+        description: record.description,
       });
     } else {
       setEditingRecord(null);
       setFormData({
         recordNumber: `RR-${Date.now()}`,
-        equipmentName: '',
-        equipmentType: '',
-        faultDescription: '',
-        repairMethod: '',
-        repairDate: '',
+        itemName: '',
+        itemCode: '',
+        originalValue: '',
         repairCost: '',
-        estimatedSavings: '',
-        repairPerson: '',
-        status: 'completed',
-        notes: '',
+        savedValue: '',
+        repairDate: new Date().toISOString().split('T')[0],
+        repairedBy: '',
+        description: '',
       });
     }
     setIsModalOpen(true);
@@ -97,8 +89,9 @@ export default function RepairReuse() {
     try {
       const payload = {
         ...formData,
+        originalValue: parseFloat(formData.originalValue) || 0,
         repairCost: parseFloat(formData.repairCost) || 0,
-        estimatedSavings: parseFloat(formData.estimatedSavings) || 0,
+        savedValue: parseFloat(formData.savedValue) || 0,
       };
 
       if (editingRecord) {
@@ -135,57 +128,27 @@ export default function RepairReuse() {
   const handleExport = () => {
     const exportData = records.map(record => ({
       记录编号: record.recordNumber,
-      设备名称: record.equipmentName,
-      设备类型: record.equipmentType,
-      故障描述: record.faultDescription,
-      修复方法: record.repairMethod,
-      修复日期: record.repairDate,
+      物品名称: record.itemName,
+      物品编码: record.itemCode,
+      原值: record.originalValue,
       修复成本: record.repairCost,
-      预估节省: record.estimatedSavings,
-      修复人员: record.repairPerson,
-      状态: record.status === 'completed' ? '已完成' : record.status === 'in_progress' ? '进行中' : record.status === 'pending' ? '待处理' : '失败',
+      节约价值: record.savedValue,
+      修复日期: record.repairDate,
+      修复人员: record.repairedBy,
+      描述: record.description,
     }));
     exportToExcel(exportData, '修旧利废记录');
   };
 
-  const getStatusColor = (status: RepairReuse['status']) => {
-    switch (status) {
-      case 'completed':
-        return 'bg-green-100 text-green-800';
-      case 'in_progress':
-        return 'bg-blue-100 text-blue-800';
-      case 'pending':
-        return 'bg-purple-100 text-purple-800';
-      case 'failed':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
 
-  const getStatusText = (status: RepairReuse['status']) => {
-    switch (status) {
-      case 'completed':
-        return '已完成';
-      case 'in_progress':
-        return '进行中';
-      case 'pending':
-        return '待处理';
-      case 'failed':
-        return '失败';
-      default:
-        return '未知';
-    }
-  };
 
   const calculateStats = () => {
     const totalRecords = records.length;
     const totalCost = records.reduce((sum, record) => sum + record.repairCost, 0);
-    const totalSavings = records.reduce((sum, record) => sum + record.estimatedSavings, 0);
+    const totalSavings = records.reduce((sum, record) => sum + record.savedValue, 0);
     const netSavings = totalSavings - totalCost;
-    const successRate = totalRecords > 0 ? (records.filter(r => r.status === 'completed').length / totalRecords * 100).toFixed(1) : '0.0';
 
-    return { totalRecords, totalCost, totalSavings, netSavings, successRate };
+    return { totalRecords, totalCost, totalSavings, netSavings };
   };
 
   const stats = calculateStats();
@@ -233,24 +196,11 @@ export default function RepairReuse() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
                 type="text"
-                placeholder="搜索记录编号、设备名称或修复人员..."
+                placeholder="搜索记录编号、物品名称或修复人员..."
                 value={searchTerm}
                 onChange={handleSearch}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
               />
-            </div>
-            <div>
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-              >
-                <option value="all">全部状态</option>
-                <option value="pending">待处理</option>
-                <option value="in_progress">进行中</option>
-                <option value="completed">已完成</option>
-                <option value="failed">失败</option>
-              </select>
             </div>
             <div>
               <button
@@ -271,9 +221,6 @@ export default function RepairReuse() {
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
                     <span className="font-bold text-lg text-gray-900">{record.recordNumber}</span>
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(record.status)}`}>
-                      {getStatusText(record.status)}
-                    </span>
                   </div>
                 </div>
                 <div className="flex gap-2">
@@ -294,18 +241,13 @@ export default function RepairReuse() {
 
               <div className="space-y-3">
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">设备信息</h4>
-                  <p className="text-gray-700">{record.equipmentName} ({record.equipmentType})</p>
+                  <h4 className="font-semibold text-gray-900 mb-1">物品信息</h4>
+                  <p className="text-gray-700">{record.itemName} ({record.itemCode})</p>
                 </div>
 
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">故障描述</h4>
-                  <p className="text-gray-700">{record.faultDescription}</p>
-                </div>
-
-                <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">修复方法</h4>
-                  <p className="text-gray-700">{record.repairMethod}</p>
+                  <h4 className="font-semibold text-gray-900 mb-1">描述</h4>
+                  <p className="text-gray-700">{record.description}</p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-2">
@@ -315,30 +257,27 @@ export default function RepairReuse() {
                   </div>
                   <div>
                     <h4 className="font-semibold text-gray-900 mb-1">修复人员</h4>
-                    <p className="text-gray-700">{record.repairPerson}</p>
+                    <p className="text-gray-700">{record.repairedBy}</p>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-3 gap-2">
                   <div className="bg-blue-50 p-3 rounded-lg">
                     <p className="text-sm text-gray-700">
-                      <span className="font-medium">修复成本:</span> ¥{record.repairCost.toFixed(2)}
+                      <span className="font-medium">原值:</span> ¥{record.originalValue.toFixed(2)}
                     </p>
                   </div>
                   <div className="bg-green-50 p-3 rounded-lg">
                     <p className="text-sm text-gray-700">
-                      <span className="font-medium">预估节省:</span> ¥{record.estimatedSavings.toFixed(2)}
+                      <span className="font-medium">修复成本:</span> ¥{record.repairCost.toFixed(2)}
+                    </p>
+                  </div>
+                  <div className="bg-purple-50 p-3 rounded-lg">
+                    <p className="text-sm text-gray-700">
+                      <span className="font-medium">节约价值:</span> ¥{record.savedValue.toFixed(2)}
                     </p>
                   </div>
                 </div>
-
-                {record.notes && (
-                  <div className="bg-gray-50 p-3 rounded-lg">
-                    <p className="text-sm text-gray-700">
-                      <span className="font-medium">备注:</span> {record.notes}
-                    </p>
-                  </div>
-                )}
               </div>
             </div>
           ))}
@@ -375,36 +314,22 @@ export default function RepairReuse() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">状态 *</label>
-                    <select
-                      required
-                      value={formData.status}
-                      onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                    >
-                      <option value="pending">待处理</option>
-                      <option value="in_progress">进行中</option>
-                      <option value="completed">已完成</option>
-                      <option value="failed">失败</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">设备名称 *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">物品名称 *</label>
                     <input
                       type="text"
                       required
-                      value={formData.equipmentName}
-                      onChange={(e) => setFormData({ ...formData, equipmentName: e.target.value })}
+                      value={formData.itemName}
+                      onChange={(e) => setFormData({ ...formData, itemName: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">设备类型 *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">物品编码 *</label>
                     <input
                       type="text"
                       required
-                      value={formData.equipmentType}
-                      onChange={(e) => setFormData({ ...formData, equipmentType: e.target.value })}
+                      value={formData.itemCode}
+                      onChange={(e) => setFormData({ ...formData, itemCode: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                     />
                   </div>
@@ -423,8 +348,20 @@ export default function RepairReuse() {
                     <input
                       type="text"
                       required
-                      value={formData.repairPerson}
-                      onChange={(e) => setFormData({ ...formData, repairPerson: e.target.value })}
+                      value={formData.repairedBy}
+                      onChange={(e) => setFormData({ ...formData, repairedBy: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">原值 *</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      required
+                      value={formData.originalValue}
+                      onChange={(e) => setFormData({ ...formData, originalValue: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                     />
                   </div>
@@ -441,51 +378,28 @@ export default function RepairReuse() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">预估节省 *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">节约价值 *</label>
                     <input
                       type="number"
                       step="0.01"
                       min="0"
                       required
-                      value={formData.estimatedSavings}
-                      onChange={(e) => setFormData({ ...formData, estimatedSavings: e.target.value })}
+                      value={formData.savedValue}
+                      onChange={(e) => setFormData({ ...formData, savedValue: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                     />
                   </div>
                 </div>
 
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">故障描述 *</label>
-                  <textarea
-                    required
-                    value={formData.faultDescription}
-                    onChange={(e) => setFormData({ ...formData, faultDescription: e.target.value })}
-                    rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                    placeholder="请描述设备故障情况..."
-                  />
-                </div>
-
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">修复方法 *</label>
-                  <textarea
-                    required
-                    value={formData.repairMethod}
-                    onChange={(e) => setFormData({ ...formData, repairMethod: e.target.value })}
-                    rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                    placeholder="请描述修复方法..."
-                  />
-                </div>
-
                 <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">备注</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">描述 *</label>
                   <textarea
-                    value={formData.notes}
-                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                    rows={2}
+                    required
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    rows={3}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                    placeholder="添加备注信息..."
+                    placeholder="请描述修旧利废情况..."
                   />
                 </div>
 

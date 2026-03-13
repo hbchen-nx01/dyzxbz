@@ -14,7 +14,6 @@ export default function DocumentManagement() {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [previewDocument, setPreviewDocument] = useState<Document | null>(null);
   const [formData, setFormData] = useState({
-    documentNumber: '',
     title: '',
     description: '',
     category: 'manual' as 'manual' | 'report' | 'standard' | 'other',
@@ -47,14 +46,13 @@ export default function DocumentManagement() {
   const filteredDocuments = documents.filter(
     (doc) =>
       (categoryFilter === 'all' || doc.category === categoryFilter) &&
-      (doc.documentNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (doc.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
         doc.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         doc.uploadedBy.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   const handleOpenModal = () => {
     setFormData({
-      documentNumber: `DOC-${Date.now()}`,
       title: '',
       description: '',
       category: 'manual',
@@ -237,7 +235,7 @@ export default function DocumentManagement() {
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="font-bold text-lg text-gray-900">{doc.documentNumber}</span>
+                    <span className="font-bold text-lg text-gray-900">{doc.id}</span>
                     <span className={`px-2 py-1 text-xs font-medium rounded-full ${getCategoryColor(doc.category)}`}>
                       {getCategoryText(doc.category)}
                     </span>
@@ -333,16 +331,6 @@ export default function DocumentManagement() {
               </div>
               <form onSubmit={handleSubmit} className="p-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">文档编号 *</label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.documentNumber}
-                      onChange={(e) => setFormData({ ...formData, documentNumber: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent"
-                    />
-                  </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">分类 *</label>
                     <select
@@ -455,7 +443,7 @@ export default function DocumentManagement() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div>
                       <p className="text-sm text-gray-600">
-                        <span className="font-medium">文档编号:</span> {previewDocument.documentNumber}
+                        <span className="font-medium">文档编号:</span> {previewDocument.id}
                       </p>
                     </div>
                     <div>

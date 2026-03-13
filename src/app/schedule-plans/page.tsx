@@ -2,27 +2,27 @@
 
 import { useState, useEffect } from 'react';
 import { Calendar, Plus, Edit, Trash2, Search, X } from 'lucide-react';
-import { SchedulePlan } from '@/types';
+import { Schedule } from '@/types';
 import { formatDate, formatDateTime } from '@/lib/utils';
 import Navbar from '@/components/Navbar';
 
 export default function SchedulePlans() {
-  const [plans, setPlans] = useState<SchedulePlan[]>([]);
+  const [plans, setPlans] = useState<Schedule[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [dateFilter, setDateFilter] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingPlan, setEditingPlan] = useState<SchedulePlan | null>(null);
+  const [editingPlan, setEditingPlan] = useState<Schedule | null>(null);
   const [formData, setFormData] = useState({
     scheduleNumber: '',
     title: '',
     description: '',
-    date: '',
     startTime: '',
     endTime: '',
-    shiftType: 'day' as 'day' | 'night' | 'morning' | 'evening',
-    assignees: '',
+    location: '',
+    organizer: '',
+    participants: '',
+    equipmentRequired: '',
     status: 'scheduled' as 'scheduled' | 'in_progress' | 'completed' | 'cancelled',
-    notes: '',
   });
 
   useEffect(() => {
@@ -49,40 +49,39 @@ export default function SchedulePlans() {
 
   const filteredPlans = plans.filter(
     (plan) =>
-      (dateFilter ? plan.date === dateFilter : true) &&
       (plan.scheduleNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
         plan.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        plan.assignees.toLowerCase().includes(searchTerm.toLowerCase()))
+        plan.organizer.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  const handleOpenModal = (plan?: SchedulePlan) => {
+  const handleOpenModal = (plan?: Schedule) => {
     if (plan) {
       setEditingPlan(plan);
       setFormData({
         scheduleNumber: plan.scheduleNumber,
         title: plan.title,
         description: plan.description,
-        date: plan.date,
         startTime: plan.startTime,
         endTime: plan.endTime,
-        shiftType: plan.shiftType,
-        assignees: plan.assignees,
+        location: plan.location,
+        organizer: plan.organizer,
+        participants: plan.participants.join(','),
+        equipmentRequired: plan.equipmentRequired || '',
         status: plan.status,
-        notes: plan.notes || '',
       });
     } else {
       setEditingPlan(null);
       setFormData({
-        scheduleNumber: `SP-${Date.now()}`,
+        scheduleNumber: `SCH-${Date.now()}`,
         title: '',
         description: '',
-        date: new Date().toISOString().split('T')[0],
-        startTime: '08:00',
-        endTime: '16:00',
-        shiftType: 'day',
-        assignees: '',
+        startTime: new Date().toISOString().slice(0, 16),
+        endTime: new Date(Date.now() + 60 * 60 * 1000).toISOString().slice(0, 16),
+        location: '',
+        organizer: '',
+        participants: '',
+        equipmentRequired: '',
         status: 'scheduled',
-        notes: '',
       });
     }
     setIsModalOpen(true);
@@ -96,24 +95,41 @@ export default function SchedulePlans() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      const payload = {
+        ...formData,
+        participants: formData.participants.split(',').map(p => p.trim()).filter(p => p),
+      };
+
+      let response;
       if (editingPlan) {
-        await fetch(`/api/schedule-plans/${editingPlan.id}`, {
+        response = await fetch(`/api/schedule-plans/${editingPlan.id}`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(formData),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
         });
       } else {
-        await fetch('/api/schedule-plans', {
+        response = await fetch('/api/schedule-plans', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(formData),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
         });
       }
 
-      handleCloseModal();
-      fetchPlans();
+      if (response.ok) {
+        fetchPlans();
+        handleCloseModal();
+      } else {
+        const error = await response.json();
+        console.error('Failed to save schedule plan:', error);
+        alert('保存失败: ' + (error.message || '未知错误'));
+      }
     } catch (error) {
-      console.error('Failed to save schedule plan:', error);
+      console.error('Error:', error);
+      alert('操作失败: ' + (error instanceof Error ? error.message : '未知错误'));
     }
   };
 
@@ -127,7 +143,7 @@ export default function SchedulePlans() {
     }
   };
 
-  const getStatusColor = (status: SchedulePlan['status']) => {
+  const getStatusColor = (status: Schedule['status']) => {
     switch (status) {
       case 'completed':
         return 'bg-green-100 text-green-800';
@@ -142,7 +158,7 @@ export default function SchedulePlans() {
     }
   };
 
-  const getStatusText = (status: SchedulePlan['status']) => {
+  const getStatusText = (status: Schedule['status']) => {
     switch (status) {
       case 'completed':
         return '已完成';
@@ -152,21 +168,6 @@ export default function SchedulePlans() {
         return '已计划';
       case 'cancelled':
         return '已取消';
-      default:
-        return '未知';
-    }
-  };
-
-  const getShiftTypeText = (shiftType: SchedulePlan['shiftType']) => {
-    switch (shiftType) {
-      case 'day':
-        return '白班';
-      case 'night':
-        return '夜班';
-      case 'morning':
-        return '早班';
-      case 'evening':
-        return '晚班';
       default:
         return '未知';
     }
@@ -225,8 +226,7 @@ export default function SchedulePlans() {
                     </span>
                   </div>
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="text-sm font-medium text-indigo-600">{getShiftTypeText(plan.shiftType)}</span>
-                    <span className="text-sm text-gray-500">{formatDate(plan.date)}</span>
+                    <span className="text-sm text-gray-500">{plan.startTime}</span>
                   </div>
                 </div>
                 <div className="flex gap-2">
@@ -263,14 +263,24 @@ export default function SchedulePlans() {
                 </div>
 
                 <div>
-                  <h4 className="font-semibold text-gray-900 mb-1">值班人员</h4>
-                  <p className="text-gray-700">{plan.assignees}</p>
+                  <h4 className="font-semibold text-gray-900 mb-1">地点</h4>
+                  <p className="text-gray-700">{plan.location}</p>
                 </div>
 
-                {plan.notes && (
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-1">组织者</h4>
+                  <p className="text-gray-700">{plan.organizer}</p>
+                </div>
+
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-1">参与者</h4>
+                  <p className="text-gray-700">{plan.participants.join(', ')}</p>
+                </div>
+
+                {plan.equipmentRequired && (
                   <div className="bg-gray-50 p-3 rounded-lg">
                     <p className="text-sm text-gray-700">
-                      <span className="font-medium">备注:</span> {plan.notes}
+                      <span className="font-medium">所需设备:</span> {plan.equipmentRequired}
                     </p>
                   </div>
                 )}
@@ -324,33 +334,9 @@ export default function SchedulePlans() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">日期 *</label>
-                    <input
-                      type="date"
-                      required
-                      value={formData.date}
-                      onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">班次类型 *</label>
-                    <select
-                      required
-                      value={formData.shiftType}
-                      onChange={(e) => setFormData({ ...formData, shiftType: e.target.value as any })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                    >
-                      <option value="day">白班</option>
-                      <option value="night">夜班</option>
-                      <option value="morning">早班</option>
-                      <option value="evening">晚班</option>
-                    </select>
-                  </div>
-                  <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">开始时间 *</label>
                     <input
-                      type="time"
+                      type="datetime-local"
                       required
                       value={formData.startTime}
                       onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
@@ -360,11 +346,52 @@ export default function SchedulePlans() {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">结束时间 *</label>
                     <input
-                      type="time"
+                      type="datetime-local"
                       required
                       value={formData.endTime}
                       onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">地点 *</label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.location}
+                      onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">组织者 *</label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.organizer}
+                      onChange={(e) => setFormData({ ...formData, organizer: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">参与者 *</label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.participants}
+                      onChange={(e) => setFormData({ ...formData, participants: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      placeholder="请输入参与者，多个参与者用逗号分隔"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">所需设备</label>
+                    <input
+                      type="text"
+                      value={formData.equipmentRequired}
+                      onChange={(e) => setFormData({ ...formData, equipmentRequired: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      placeholder="请输入所需设备"
                     />
                   </div>
                 </div>
@@ -380,7 +407,7 @@ export default function SchedulePlans() {
                   />
                 </div>
 
-                <div className="mb-4">
+                <div className="mb-6">
                   <label className="block text-sm font-medium text-gray-700 mb-1">计划描述</label>
                   <textarea
                     value={formData.description}
@@ -388,29 +415,6 @@ export default function SchedulePlans() {
                     rows={3}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                     placeholder="请描述排班计划的详细内容..."
-                  />
-                </div>
-
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">值班人员 *</label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.assignees}
-                    onChange={(e) => setFormData({ ...formData, assignees: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                    placeholder="输入值班人员姓名，用逗号分隔"
-                  />
-                </div>
-
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">备注</label>
-                  <textarea
-                    value={formData.notes}
-                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                    rows={2}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                    placeholder="添加备注信息..."
                   />
                 </div>
 

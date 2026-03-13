@@ -1,6 +1,7 @@
 import {
   Personnel,
   ExperienceShare,
+  Comment,
   DailyWork,
   WorkOrder,
   Instrument,
@@ -122,6 +123,7 @@ class DataStore {
         orderNumber: 'WO-2024-001',
         instrumentId: 'INST001',
         instrumentName: '压力变送器',
+        instrumentTag: 'PT-001',
         instrumentLocation: '车间A-1',
         faultDescription: '显示值波动异常',
         priority: 'high',

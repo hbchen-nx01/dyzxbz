@@ -172,6 +172,9 @@ export interface TrainingPlan {
   participants: string[];
   participantNames: string[];
   status: 'planned' | 'ongoing' | 'completed' | 'cancelled';
+  assessmentMethod?: string;
+  evaluationResults?: string;
+  notes?: string;
   evaluationScore?: number;
   feedback?: string;
   createdAt: string;
@@ -181,10 +184,15 @@ export interface TrainingPlan {
 export interface Schedule {
   id: string;
   scheduleNumber: string;
-  year: number;
-  month: number;
-  type: 'day_shift' | 'night_shift' | 'rotating';
-  shifts: Shift[];
+  title: string;
+  description: string;
+  startTime: string;
+  endTime: string;
+  location: string;
+  organizer: string;
+  participants: string[];
+  equipmentRequired?: string;
+  status: 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
   createdAt: string;
   updatedAt: string;
 }

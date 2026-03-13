@@ -4,11 +4,5 @@
   "devCommand": "npm run dev",
   "installCommand": "npm install",
   "framework": "nextjs",
-  "regions": ["hkg1"],
-  "env": {
-    "NEXT_PUBLIC_APP_URL": {
-      "description": "应用程序的公共URL",
-      "value": "https://your-app.vercel.app"
-    }
-  }
+  "regions": ["hkg1"]
 }

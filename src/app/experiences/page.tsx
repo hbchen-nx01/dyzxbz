@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Share2, Plus, Heart, MessageCircle, Upload, Download, Search, X, Image as ImageIcon, Filter } from 'lucide-react';
-import { ExperienceShare, Personnel } from '@/types';
+import type { ExperienceShare, Personnel } from '@/types';
 import { exportToExcel, importFromExcel, formatDateTime } from '@/lib/utils';
 
 export default function ExperienceShare() {

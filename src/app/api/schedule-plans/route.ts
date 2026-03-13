@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { DataStore } from '@/lib/dataStore';
-import { SchedulePlan } from '@/types';
+import DataStore from '@/lib/dataStore';
+import { Schedule } from '@/types';
 
-const dataStore = new DataStore();
+const dataStore = DataStore.getInstance();
 
 export async function GET(request: NextRequest) {
   try {
-    const plans = dataStore.schedulePlans.getAll();
-    return NextResponse.json(plans);
+    const schedules = dataStore.getSchedules();
+    return NextResponse.json(schedules);
   } catch (error) {
     return NextResponse.json({ error: 'Failed to fetch schedule plans' }, { status: 500 });
   }
@@ -15,9 +15,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const plan = await request.json() as Omit<SchedulePlan, 'id' | 'createdAt'>;
-    const newPlan = dataStore.schedulePlans.create(plan);
-    return NextResponse.json(newPlan, { status: 201 });
+    const plan = await request.json() as Omit<Schedule, 'id' | 'createdAt'>;
+    const newSchedule = dataStore.createSchedule(plan);
+    return NextResponse.json(newSchedule, { status: 201 });
   } catch (error) {
     return NextResponse.json({ error: 'Failed to create schedule plan' }, { status: 500 });
   }
