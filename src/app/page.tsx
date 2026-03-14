@@ -49,8 +49,7 @@ export default function Home() {
       <header className="bg-white shadow-md">
         <div className="max-w-7xl mx-auto px-4 py-6 flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">仪表维护管理系统</h1>
-            <p className="text-gray-600 mt-2">专业的仪表设备维护管理平台</p>
+            <h1 className="text-3xl font-bold text-gray-900">仪表班组管理系统V1.0</h1>
           </div>
           <button
             onClick={() => router.push('/')}

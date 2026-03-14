@@ -1,6 +1,6 @@
-# 仪表维护管理系统
+# 仪表班组管理系统V1.0
 
-一个专业的仪表设备维护管理平台，基于 Next.js 14 + TypeScript + Tailwind CSS 构建。
+基于 Next.js 14 + TypeScript + Tailwind CSS 构建。
 
 ## 功能特性
 
