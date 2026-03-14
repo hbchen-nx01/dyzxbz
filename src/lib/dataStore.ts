@@ -12,6 +12,7 @@ import {
   Schedule,
   Document,
   Statistics,
+  Attendance,
 } from '@/types';
 
 class DataStore {
@@ -28,6 +29,7 @@ class DataStore {
   private trainingPlans: TrainingPlan[] = [];
   private schedules: Schedule[] = [];
   private documents: Document[] = [];
+  private attendances: Attendance[] = [];
 
   private constructor() {
     this.initializeSampleData();
@@ -198,6 +200,50 @@ class DataStore {
         status: 'pending',
         createdAt: '2026-03-12T00:00:00Z',
         updatedAt: '2026-03-12T00:00:00Z',
+      },
+    ];
+
+    this.attendances = [
+      {
+        id: 'ATT001',
+        personnelId: '1',
+        personnelName: '张三',
+        date: '2024-03-10',
+        status: 'present',
+        hoursWorked: 8,
+        createdAt: '2024-03-10T08:00:00Z',
+        updatedAt: '2024-03-10T17:00:00Z',
+      },
+      {
+        id: 'ATT002',
+        personnelId: '1',
+        personnelName: '张三',
+        date: '2024-03-11',
+        status: 'late',
+        hoursWorked: 7.5,
+        createdAt: '2024-03-11T08:30:00Z',
+        updatedAt: '2024-03-11T17:00:00Z',
+      },
+      {
+        id: 'ATT003',
+        personnelId: '2',
+        personnelName: '李四',
+        date: '2024-03-10',
+        status: 'early_leave',
+        hoursWorked: 7.5,
+        createdAt: '2024-03-10T08:00:00Z',
+        updatedAt: '2024-03-10T16:30:00Z',
+      },
+      {
+        id: 'ATT004',
+        personnelId: '2',
+        personnelName: '李四',
+        date: '2024-03-11',
+        status: 'sick',
+        hoursWorked: 0,
+        notes: '病假',
+        createdAt: '2024-03-11T00:00:00Z',
+        updatedAt: '2024-03-11T00:00:00Z',
       },
     ];
   }
@@ -491,6 +537,50 @@ class DataStore {
     document.downloadCount++;
     document.updatedAt = new Date().toISOString();
     return document;
+  }
+
+  getAttendances(): Attendance[] {
+    return [...this.attendances];
+  }
+
+  getAttendancesByMonth(year: number, month: number): Attendance[] {
+    return this.attendances.filter(a => {
+      const date = new Date(a.date);
+      return date.getFullYear() === year && date.getMonth() === month - 1;
+    });
+  }
+
+  getAttendanceByPersonnelAndDate(personnelId: string, date: string): Attendance | undefined {
+    return this.attendances.find(a => a.personnelId === personnelId && a.date === date);
+  }
+
+  createAttendance(data: Omit<Attendance, 'id' | 'createdAt' | 'updatedAt'>): Attendance {
+    const newAttendance: Attendance = {
+      ...data,
+      id: Date.now().toString(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    this.attendances.push(newAttendance);
+    return newAttendance;
+  }
+
+  updateAttendance(id: string, data: Partial<Attendance>): Attendance | null {
+    const index = this.attendances.findIndex(a => a.id === id);
+    if (index === -1) return null;
+    this.attendances[index] = {
+      ...this.attendances[index],
+      ...data,
+      updatedAt: new Date().toISOString(),
+    };
+    return this.attendances[index];
+  }
+
+  deleteAttendance(id: string): boolean {
+    const index = this.attendances.findIndex(a => a.id === id);
+    if (index === -1) return false;
+    this.attendances.splice(index, 1);
+    return true;
   }
 
   getStatistics(): Statistics {

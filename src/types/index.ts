@@ -206,6 +206,18 @@ export interface Shift {
   position: string;
 }
 
+export interface Attendance {
+  id: string;
+  personnelId: string;
+  personnelName: string;
+  date: string;
+  status: 'present' | 'annual_leave' | 'sick' | 'vacation' | 'maternity_leave' | 'marriage_funeral' | 'childcare' | 'home_leave' | 'parental_leave' | 'work_injury' | 'absent' | 'nursing' | 'night_shift' | 'holiday_work' | 'shift_swap' | 'rest';
+  hoursWorked?: number;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Document {
   id: string;
   title: string;
@@ -238,5 +250,14 @@ export interface MonthlyData {
   workOrders: number;
   faults: number;
   maintenanceHours: number;
+  completionRate: number;
+}
+
+export interface PersonnelWorkload {
+  personnelId: string;
+  personnelName: string;
+  workOrdersCount: number;
+  completedWorkOrdersCount: number;
+  totalWorkHours: number;
   completionRate: number;
 }
