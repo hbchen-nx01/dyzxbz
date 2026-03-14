@@ -15,12 +15,14 @@ import {
   GraduationCap, 
   CalendarClock, 
   FileText,
+  Heart,
   Home as HomeIcon
 } from 'lucide-react';
 
 const modules = [
   { id: 'personnel', name: '人员信息管理', icon: Users, description: '人员信息管理、照片上传、Excel导入导出', route: '/personnel' },
   { id: 'attendance', name: '人员考勤系统', icon: Calendar, description: '人员考勤记录、统计和分析', route: '/attendance' },
+  { id: 'emotion-health', name: '员工情绪与健康管理', icon: Heart, description: '情绪评分、血压监测、工作适应性评估', route: '/emotion-health' },
   { id: 'experience', name: '经验分享', icon: Share2, description: '经验分享发布、浏览、评论、点赞', route: '/experiences' },
   { id: 'daily-work', name: '每日工作安排', icon: Calendar, description: '工作任务创建、状态更新、图片上传', route: '/daily-work' },
   { id: 'work-orders', name: '仪表维护工单', icon: ClipboardList, description: '工单创建、跟踪、处理全流程', route: '/work-orders' },

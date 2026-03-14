@@ -13,6 +13,7 @@ import {
   Document,
   Statistics,
   Attendance,
+  EmotionHealthRecord,
 } from '@/types';
 
 class DataStore {
@@ -30,6 +31,7 @@ class DataStore {
   private schedules: Schedule[] = [];
   private documents: Document[] = [];
   private attendances: Attendance[] = [];
+  private emotionHealthRecords: EmotionHealthRecord[] = [];
 
   private constructor() {
     this.initializeSampleData();
@@ -244,6 +246,51 @@ class DataStore {
         notes: '病假',
         createdAt: '2024-03-11T00:00:00Z',
         updatedAt: '2024-03-11T00:00:00Z',
+      },
+    ];
+
+    this.emotionHealthRecords = [
+      {
+        id: 'EHR001',
+        personnelId: '1',
+        personnelName: '张三',
+        date: '2026-03-14',
+        emotionScore: 8,
+        systolicBP: 120,
+        diastolicBP: 80,
+        isSuitableForWork: true,
+        statusColor: 'green',
+        notes: '状态良好',
+        createdAt: '2026-03-14T08:00:00Z',
+        updatedAt: '2026-03-14T08:00:00Z',
+      },
+      {
+        id: 'EHR002',
+        personnelId: '2',
+        personnelName: '李四',
+        date: '2026-03-14',
+        emotionScore: 5,
+        systolicBP: 135,
+        diastolicBP: 90,
+        isSuitableForWork: true,
+        statusColor: 'yellow',
+        notes: '情绪一般，血压偏高',
+        createdAt: '2026-03-14T08:00:00Z',
+        updatedAt: '2026-03-14T08:00:00Z',
+      },
+      {
+        id: 'EHR003',
+        personnelId: '1',
+        personnelName: '张三',
+        date: '2026-03-13',
+        emotionScore: 3,
+        systolicBP: 145,
+        diastolicBP: 95,
+        isSuitableForWork: false,
+        statusColor: 'red',
+        notes: '情绪不佳，血压过高',
+        createdAt: '2026-03-13T08:00:00Z',
+        updatedAt: '2026-03-13T08:00:00Z',
       },
     ];
   }
@@ -620,6 +667,47 @@ class DataStore {
         },
       ],
     };
+  }
+
+  getEmotionHealthRecords(): EmotionHealthRecord[] {
+    return [...this.emotionHealthRecords];
+  }
+
+  getEmotionHealthRecordsByDate(date: string): EmotionHealthRecord[] {
+    return this.emotionHealthRecords.filter(record => record.date === date);
+  }
+
+  getEmotionHealthRecordsByPersonnel(personnelId: string): EmotionHealthRecord[] {
+    return this.emotionHealthRecords.filter(record => record.personnelId === personnelId);
+  }
+
+  createEmotionHealthRecord(data: Omit<EmotionHealthRecord, 'id' | 'createdAt' | 'updatedAt'>): EmotionHealthRecord {
+    const newRecord: EmotionHealthRecord = {
+      ...data,
+      id: Date.now().toString(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    this.emotionHealthRecords.push(newRecord);
+    return newRecord;
+  }
+
+  updateEmotionHealthRecord(id: string, data: Partial<EmotionHealthRecord>): EmotionHealthRecord | null {
+    const index = this.emotionHealthRecords.findIndex(r => r.id === id);
+    if (index === -1) return null;
+    this.emotionHealthRecords[index] = {
+      ...this.emotionHealthRecords[index],
+      ...data,
+      updatedAt: new Date().toISOString(),
+    };
+    return this.emotionHealthRecords[index];
+  }
+
+  deleteEmotionHealthRecord(id: string): boolean {
+    const index = this.emotionHealthRecords.findIndex(r => r.id === id);
+    if (index === -1) return false;
+    this.emotionHealthRecords.splice(index, 1);
+    return true;
   }
 }
 

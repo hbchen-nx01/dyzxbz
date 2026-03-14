@@ -261,3 +261,18 @@ export interface PersonnelWorkload {
   totalWorkHours: number;
   completionRate: number;
 }
+
+export interface EmotionHealthRecord {
+  id: string;
+  personnelId: string;
+  personnelName: string;
+  date: string;
+  emotionScore: number;
+  systolicBP: number;
+  diastolicBP: number;
+  isSuitableForWork: boolean;
+  statusColor: 'green' | 'yellow' | 'red';
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
