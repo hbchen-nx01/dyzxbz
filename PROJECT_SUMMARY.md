@@ -2,7 +2,7 @@
 
 ## 项目概述
 
-班组管理系统V1.0是一个基于 Next.js 14 + TypeScript + Tailwind CSS 构建的系统，已成功实现核心功能模块并配置好 Vercel 部署。
+电仪中心班组管理系统V1.0是一个基于 Next.js 14 + TypeScript + Tailwind CSS 构建的系统，已成功实现核心功能模块并配置好 Vercel 部署。
 
 ## 已完成工作
 

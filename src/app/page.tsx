@@ -49,7 +49,7 @@ export default function Home() {
       <header className="bg-white shadow-md">
         <div className="max-w-7xl mx-auto px-4 py-6 flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">班组管理系统V1.0</h1>
+            <h1 className="text-3xl font-bold text-gray-900">电仪中心班组管理系统V1.0</h1>
             <p className="text-gray-600 mt-1">作者：陈海兵</p>
           </div>
           <button
