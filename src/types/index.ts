@@ -153,6 +153,7 @@ export interface RecycleRecord {
   recordNumber: string;
   itemName: string;
   itemCode: string;
+  instrumentTag: string;
   originalValue: number;
   repairCost: number;
   savedValue: number;

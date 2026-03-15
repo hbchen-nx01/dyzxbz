@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Wrench, Plus, Edit, Trash2, Download, Search, X } from 'lucide-react';
-import { RecycleRecord, Personnel } from '@/types';
+import { RecycleRecord, Personnel, Instrument } from '@/types';
 import { exportToExcel, formatDate, formatDateTime } from '@/lib/utils';
 import Navbar from '@/components/Navbar';
 
@@ -12,10 +12,12 @@ export default function RepairReuse() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState<RecycleRecord | null>(null);
   const [personnel, setPersonnel] = useState<Personnel[]>([]);
+  const [instruments, setInstruments] = useState<Instrument[]>([]);
   const [formData, setFormData] = useState({
     recordNumber: '',
     itemName: '',
     itemCode: '',
+    instrumentTag: '',
     originalValue: '',
     repairCost: '',
     savedValue: '',
@@ -27,7 +29,18 @@ export default function RepairReuse() {
   useEffect(() => {
     fetchRecords();
     fetchPersonnel();
+    fetchInstruments();
   }, []);
+
+  const fetchInstruments = async () => {
+    try {
+      const response = await fetch('/api/instruments');
+      const data = await response.json();
+      setInstruments(data);
+    } catch (error) {
+      console.error('Failed to fetch instruments:', error);
+    }
+  };
 
   const fetchRecords = async () => {
     try {
@@ -75,6 +88,7 @@ export default function RepairReuse() {
         recordNumber: record.recordNumber,
         itemName: record.itemName,
         itemCode: record.itemCode,
+        instrumentTag: record.instrumentTag,
         originalValue: record.originalValue.toString(),
         repairCost: record.repairCost.toString(),
         savedValue: record.savedValue.toString(),
@@ -88,6 +102,7 @@ export default function RepairReuse() {
         recordNumber: `RR-${Date.now()}`,
         itemName: '',
         itemCode: '',
+        instrumentTag: '',
         originalValue: '',
         repairCost: '',
         savedValue: '',
@@ -352,6 +367,22 @@ export default function RepairReuse() {
                       onChange={(e) => setFormData({ ...formData, itemCode: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                     />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">仪表位号 *</label>
+                    <select
+                      required
+                      value={formData.instrumentTag}
+                      onChange={(e) => setFormData({ ...formData, instrumentTag: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    >
+                      <option value="">请选择仪表位号</option>
+                      {instruments.map((instrument) => (
+                        <option key={instrument.id} value={instrument.tag}>
+                          {instrument.tag} - {instrument.name}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">修复日期 *</label>

@@ -493,6 +493,13 @@ class DataStore {
     return this.faults[index];
   }
 
+  deleteFault(id: string): boolean {
+    const index = this.faults.findIndex(f => f.id === id);
+    if (index === -1) return false;
+    this.faults.splice(index, 1);
+    return true;
+  }
+
   getMaintenancePlans(): MaintenancePlan[] {
     return [...this.maintenancePlans];
   }
@@ -532,6 +539,24 @@ class DataStore {
     };
     this.recycleRecords.push(newRecord);
     return newRecord;
+  }
+
+  updateRecycleRecord(id: string, data: Partial<RecycleRecord>): RecycleRecord | null {
+    const index = this.recycleRecords.findIndex(r => r.id === id);
+    if (index === -1) return null;
+    this.recycleRecords[index] = {
+      ...this.recycleRecords[index],
+      ...data,
+      updatedAt: new Date().toISOString(),
+    };
+    return this.recycleRecords[index];
+  }
+
+  deleteRecycleRecord(id: string): boolean {
+    const index = this.recycleRecords.findIndex(r => r.id === id);
+    if (index === -1) return false;
+    this.recycleRecords.splice(index, 1);
+    return true;
   }
 
   getTrainingPlans(): TrainingPlan[] {

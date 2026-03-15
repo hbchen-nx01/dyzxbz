@@ -19,9 +19,13 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const record = await request.json() as Partial<RecycleRecord>;
-    // 这里需要实现更新回收记录的逻辑
-    return NextResponse.json({ message: 'Repair reuse record updated successfully' });
+    const body = await request.json();
+    const store = DataStore.getInstance();
+    const updatedRecord = store.updateRecycleRecord(params.id, body);
+    if (!updatedRecord) {
+      return NextResponse.json({ error: 'Repair reuse record not found' }, { status: 404 });
+    }
+    return NextResponse.json(updatedRecord);
   } catch (error) {
     return NextResponse.json({ error: 'Failed to update repair reuse record' }, { status: 500 });
   }
@@ -29,8 +33,12 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    // 这里需要实现删除回收记录的逻辑
-    return NextResponse.json({ message: 'Repair reuse record deleted successfully' });
+    const store = DataStore.getInstance();
+    const deleted = store.deleteRecycleRecord(params.id);
+    if (!deleted) {
+      return NextResponse.json({ error: 'Repair reuse record not found' }, { status: 404 });
+    }
+    return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json({ error: 'Failed to delete repair reuse record' }, { status: 500 });
   }
