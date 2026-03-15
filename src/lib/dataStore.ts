@@ -15,6 +15,11 @@ import {
   Attendance,
   EmotionHealthRecord,
 } from '@/types';
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
+import { join } from 'path';
+
+const DATA_DIR = join(process.cwd(), 'data');
+const DATA_FILE = join(DATA_DIR, 'data.json');
 
 class DataStore {
   private static instance: DataStore;
@@ -34,7 +39,59 @@ class DataStore {
   private emotionHealthRecords: EmotionHealthRecord[] = [];
 
   private constructor() {
-    this.initializeSampleData();
+    this.loadData();
+  }
+
+  private loadData() {
+    if (existsSync(DATA_FILE)) {
+      try {
+        const data = JSON.parse(readFileSync(DATA_FILE, 'utf8'));
+        this.personnel = data.personnel || [];
+        this.experiences = data.experiences || [];
+        this.dailyWorks = data.dailyWorks || [];
+        this.workOrders = data.workOrders || [];
+        this.instruments = data.instruments || [];
+        this.maintenancePlans = data.maintenancePlans || [];
+        this.faults = data.faults || [];
+        this.recycleRecords = data.recycleRecords || [];
+        this.trainingPlans = data.trainingPlans || [];
+        this.schedules = data.schedules || [];
+        this.documents = data.documents || [];
+        this.attendances = data.attendances || [];
+        this.emotionHealthRecords = data.emotionHealthRecords || [];
+      } catch (error) {
+        console.error('Failed to load data:', error);
+        this.initializeSampleData();
+      }
+    } else {
+      this.initializeSampleData();
+    }
+  }
+
+  private saveData() {
+    if (!existsSync(DATA_DIR)) {
+      mkdirSync(DATA_DIR, { recursive: true });
+    }
+    try {
+      const data = {
+        personnel: this.personnel,
+        experiences: this.experiences,
+        dailyWorks: this.dailyWorks,
+        workOrders: this.workOrders,
+        instruments: this.instruments,
+        maintenancePlans: this.maintenancePlans,
+        faults: this.faults,
+        recycleRecords: this.recycleRecords,
+        trainingPlans: this.trainingPlans,
+        schedules: this.schedules,
+        documents: this.documents,
+        attendances: this.attendances,
+        emotionHealthRecords: this.emotionHealthRecords,
+      };
+      writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
+    } catch (error) {
+      console.error('Failed to save data:', error);
+    }
   }
 
   static getInstance(): DataStore {
@@ -317,6 +374,7 @@ class DataStore {
       updatedAt: new Date().toISOString(),
     };
     this.personnel.push(newPersonnel);
+    this.saveData();
     return newPersonnel;
   }
 
@@ -328,6 +386,7 @@ class DataStore {
       ...data,
       updatedAt: new Date().toISOString(),
     };
+    this.saveData();
     return this.personnel[index];
   }
 
@@ -335,6 +394,7 @@ class DataStore {
     const index = this.personnel.findIndex(p => p.id === id);
     if (index === -1) return false;
     this.personnel.splice(index, 1);
+    this.saveData();
     return true;
   }
 
@@ -353,6 +413,7 @@ class DataStore {
       updatedAt: new Date().toISOString(),
     };
     this.experiences.push(newExperience);
+    this.saveData();
     return newExperience;
   }
 
@@ -364,6 +425,7 @@ class DataStore {
       experience.likedBy.push(userId);
       experience.likes++;
       experience.updatedAt = new Date().toISOString();
+      this.saveData();
     }
     return experience;
   }
@@ -379,6 +441,7 @@ class DataStore {
     };
     experience.comments.push(newComment);
     experience.updatedAt = new Date().toISOString();
+    this.saveData();
     return experience;
   }
 
@@ -394,6 +457,7 @@ class DataStore {
       updatedAt: new Date().toISOString(),
     };
     this.dailyWorks.push(newDailyWork);
+    this.saveData();
     return newDailyWork;
   }
 
@@ -405,6 +469,7 @@ class DataStore {
       ...data,
       updatedAt: new Date().toISOString(),
     };
+    this.saveData();
     return this.dailyWorks[index];
   }
 
@@ -420,6 +485,7 @@ class DataStore {
       updatedAt: new Date().toISOString(),
     };
     this.workOrders.push(newWorkOrder);
+    this.saveData();
     return newWorkOrder;
   }
 
@@ -431,6 +497,7 @@ class DataStore {
       ...data,
       updatedAt: new Date().toISOString(),
     };
+    this.saveData();
     return this.workOrders[index];
   }
 
@@ -446,6 +513,7 @@ class DataStore {
       updatedAt: new Date().toISOString(),
     };
     this.instruments.push(newInstrument);
+    this.saveData();
     return newInstrument;
   }
 
@@ -457,6 +525,7 @@ class DataStore {
       ...data,
       updatedAt: new Date().toISOString(),
     };
+    this.saveData();
     return this.instruments[index];
   }
 
@@ -464,6 +533,7 @@ class DataStore {
     const index = this.instruments.findIndex(i => i.id === id);
     if (index === -1) return false;
     this.instruments.splice(index, 1);
+    this.saveData();
     return true;
   }
 
@@ -479,6 +549,7 @@ class DataStore {
       updatedAt: new Date().toISOString(),
     };
     this.faults.push(newFault);
+    this.saveData();
     return newFault;
   }
 
@@ -490,6 +561,7 @@ class DataStore {
       ...data,
       updatedAt: new Date().toISOString(),
     };
+    this.saveData();
     return this.faults[index];
   }
 
@@ -497,6 +569,7 @@ class DataStore {
     const index = this.faults.findIndex(f => f.id === id);
     if (index === -1) return false;
     this.faults.splice(index, 1);
+    this.saveData();
     return true;
   }
 
@@ -512,6 +585,7 @@ class DataStore {
       updatedAt: new Date().toISOString(),
     };
     this.maintenancePlans.push(newPlan);
+    this.saveData();
     return newPlan;
   }
 
@@ -523,6 +597,7 @@ class DataStore {
       ...data,
       updatedAt: new Date().toISOString(),
     };
+    this.saveData();
     return this.maintenancePlans[index];
   }
 
@@ -538,6 +613,7 @@ class DataStore {
       updatedAt: new Date().toISOString(),
     };
     this.recycleRecords.push(newRecord);
+    this.saveData();
     return newRecord;
   }
 
@@ -549,6 +625,7 @@ class DataStore {
       ...data,
       updatedAt: new Date().toISOString(),
     };
+    this.saveData();
     return this.recycleRecords[index];
   }
 
@@ -556,6 +633,7 @@ class DataStore {
     const index = this.recycleRecords.findIndex(r => r.id === id);
     if (index === -1) return false;
     this.recycleRecords.splice(index, 1);
+    this.saveData();
     return true;
   }
 
@@ -571,6 +649,7 @@ class DataStore {
       updatedAt: new Date().toISOString(),
     };
     this.trainingPlans.push(newPlan);
+    this.saveData();
     return newPlan;
   }
 
@@ -582,6 +661,7 @@ class DataStore {
       ...data,
       updatedAt: new Date().toISOString(),
     };
+    this.saveData();
     return this.trainingPlans[index];
   }
 
@@ -597,6 +677,7 @@ class DataStore {
       updatedAt: new Date().toISOString(),
     };
     this.schedules.push(newSchedule);
+    this.saveData();
     return newSchedule;
   }
 
@@ -613,6 +694,7 @@ class DataStore {
       updatedAt: new Date().toISOString(),
     };
     this.documents.push(newDocument);
+    this.saveData();
     return newDocument;
   }
 
@@ -621,6 +703,7 @@ class DataStore {
     if (!document) return null;
     document.downloadCount++;
     document.updatedAt = new Date().toISOString();
+    this.saveData();
     return document;
   }
 
@@ -647,6 +730,7 @@ class DataStore {
       updatedAt: new Date().toISOString(),
     };
     this.attendances.push(newAttendance);
+    this.saveData();
     return newAttendance;
   }
 
@@ -658,6 +742,7 @@ class DataStore {
       ...data,
       updatedAt: new Date().toISOString(),
     };
+    this.saveData();
     return this.attendances[index];
   }
 
@@ -665,6 +750,7 @@ class DataStore {
     const index = this.attendances.findIndex(a => a.id === id);
     if (index === -1) return false;
     this.attendances.splice(index, 1);
+    this.saveData();
     return true;
   }
 
@@ -727,6 +813,7 @@ class DataStore {
       updatedAt: new Date().toISOString(),
     };
     this.emotionHealthRecords.push(newRecord);
+    this.saveData();
     return newRecord;
   }
 
@@ -738,6 +825,7 @@ class DataStore {
       ...data,
       updatedAt: new Date().toISOString(),
     };
+    this.saveData();
     return this.emotionHealthRecords[index];
   }
 
@@ -745,6 +833,7 @@ class DataStore {
     const index = this.emotionHealthRecords.findIndex(r => r.id === id);
     if (index === -1) return false;
     this.emotionHealthRecords.splice(index, 1);
+    this.saveData();
     return true;
   }
 }
