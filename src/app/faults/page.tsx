@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { AlertTriangle, Plus, Edit, Trash2, Upload, Download, Search, X } from 'lucide-react';
-import { Fault } from '@/types';
+import { Fault, Instrument } from '@/types';
 import { exportToExcel, importFromExcel, formatDateTime } from '@/lib/utils';
 import Navbar from '@/components/Navbar';
 
@@ -12,17 +12,20 @@ export default function FaultHandling() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingFault, setEditingFault] = useState<Fault | null>(null);
+  const [instruments, setInstruments] = useState<Instrument[]>([]);
+  const [personnel, setPersonnel] = useState<{ id: string; name: string }[]>([]);
   const [formData, setFormData] = useState({
     faultNumber: '',
     instrumentId: '',
     instrumentName: '',
+    instrumentTag: '',
     instrumentLocation: '',
     faultType: '',
     description: '',
     severity: 'medium' as 'low' | 'medium' | 'high' | 'critical',
     status: 'reported' as 'reported' | 'investigating' | 'fixing' | 'resolved' | 'closed',
-    reportedBy: '1',
-    reportedByName: '当前用户',
+    reportedBy: '',
+    reportedByName: '',
     assignedTo: '',
     assignedToName: '',
     resolution: '',
@@ -30,7 +33,29 @@ export default function FaultHandling() {
 
   useEffect(() => {
     fetchFaults();
+    fetchInstruments();
+    fetchPersonnel();
   }, []);
+
+  const fetchInstruments = async () => {
+    try {
+      const response = await fetch('/api/instruments');
+      const data = await response.json();
+      setInstruments(data);
+    } catch (error) {
+      console.error('Failed to fetch instruments:', error);
+    }
+  };
+
+  const fetchPersonnel = async () => {
+    try {
+      const response = await fetch('/api/personnel');
+      const data = await response.json();
+      setPersonnel(data.map((p: any) => ({ id: p.id, name: p.name })));
+    } catch (error) {
+      console.error('Failed to fetch personnel:', error);
+    }
+  };
 
   const fetchFaults = async () => {
     try {
@@ -39,6 +64,27 @@ export default function FaultHandling() {
       setFaults(data);
     } catch (error) {
       console.error('Failed to fetch faults:', error);
+    }
+  };
+
+  const handleInstrumentTagChange = (tag: string) => {
+    const selectedInstrument = instruments.find(instrument => instrument.tag === tag);
+    if (selectedInstrument) {
+      setFormData({
+        ...formData,
+        instrumentTag: tag,
+        instrumentId: selectedInstrument.id,
+        instrumentName: selectedInstrument.name,
+        instrumentLocation: selectedInstrument.location
+      });
+    } else {
+      setFormData({
+        ...formData,
+        instrumentTag: tag,
+        instrumentId: '',
+        instrumentName: '',
+        instrumentLocation: ''
+      });
     }
   };
 
@@ -61,6 +107,7 @@ export default function FaultHandling() {
         faultNumber: fault.faultNumber,
         instrumentId: fault.instrumentId,
         instrumentName: fault.instrumentName,
+        instrumentTag: fault.instrumentTag,
         instrumentLocation: fault.instrumentLocation,
         faultType: fault.faultType,
         description: fault.description,
@@ -78,13 +125,14 @@ export default function FaultHandling() {
         faultNumber: `FLT-${Date.now()}`,
         instrumentId: '',
         instrumentName: '',
+        instrumentTag: '',
         instrumentLocation: '',
         faultType: '',
         description: '',
         severity: 'medium',
         status: 'reported',
-        reportedBy: '1',
-        reportedByName: '当前用户',
+        reportedBy: '',
+        reportedByName: '',
         assignedTo: '',
         assignedToName: '',
         resolution: '',
@@ -141,6 +189,7 @@ export default function FaultHandling() {
     const exportData = faults.map(fault => ({
       故障编号: fault.faultNumber,
       仪表名称: fault.instrumentName,
+      仪表位号: fault.instrumentTag,
       仪表位置: fault.instrumentLocation,
       故障类型: fault.faultType,
       严重程度: fault.severity === 'critical' ? '严重' : fault.severity === 'high' ? '高' : fault.severity === 'medium' ? '中' : '低',
@@ -211,19 +260,19 @@ export default function FaultHandling() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar title="设备故障处理" />
+      <Navbar title="设备故障隐患处理" />
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-3">
-            <AlertTriangle className="w-8 h-8 text-blue-600" />
-            <h2 className="text-2xl font-bold text-gray-900">设备故障处理</h2>
+            <AlertTriangle className="w-8 h-8 text-red-600" />
+            <h2 className="text-2xl font-bold text-gray-900">设备故障隐患处理</h2>
           </div>
           <button
             onClick={() => handleOpenModal()}
             className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
             <Plus className="w-5 h-5" />
-            上报故障
+            上报故障隐患
           </button>
         </div>
 
@@ -307,7 +356,8 @@ export default function FaultHandling() {
                 <div>
                   <h4 className="font-semibold text-gray-900 mb-1">仪表信息</h4>
                   <p className="text-gray-700">{fault.instrumentName}</p>
-                  <p className="text-sm text-gray-500">{fault.instrumentLocation}</p>
+                  <p className="text-sm text-gray-500">位号: {fault.instrumentTag}</p>
+                  <p className="text-sm text-gray-500">位置: {fault.instrumentLocation}</p>
                 </div>
 
                 <div>
@@ -349,7 +399,7 @@ export default function FaultHandling() {
             <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
               <div className="flex items-center justify-between p-6 border-b">
                 <h2 className="text-2xl font-bold text-gray-900">
-                  {editingFault ? '编辑故障信息' : '上报故障'}
+                  {editingFault ? '编辑故障隐患信息' : '上报故障隐患'}
                 </h2>
                 <button
                   onClick={handleCloseModal}
@@ -382,6 +432,22 @@ export default function FaultHandling() {
                       <option value="medium">中</option>
                       <option value="high">高</option>
                       <option value="critical">严重</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">仪表位号 *</label>
+                    <select
+                      required
+                      value={formData.instrumentTag}
+                      onChange={(e) => handleInstrumentTagChange(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value="">请选择仪表位号</option>
+                      {instruments.map((instrument) => (
+                        <option key={instrument.id} value={instrument.tag}>
+                          {instrument.tag} - {instrument.name}
+                        </option>
+                      ))}
                     </select>
                   </div>
                   <div>
@@ -438,7 +504,7 @@ export default function FaultHandling() {
                     required
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    rows={4}
+                    rows={2}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="请详细描述故障情况..."
                   />
@@ -447,21 +513,50 @@ export default function FaultHandling() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">负责人</label>
-                    <input
-                      type="text"
-                      value={formData.assignedToName}
-                      onChange={(e) => setFormData({ ...formData, assignedToName: e.target.value })}
+                    <select
+                      value={formData.assignedTo}
+                      onChange={(e) => {
+                        const selectedId = e.target.value;
+                        const selectedPerson = personnel.find(p => p.id === selectedId);
+                        setFormData({ 
+                          ...formData, 
+                          assignedTo: selectedId, 
+                          assignedToName: selectedPerson?.name || '' 
+                        });
+                      }}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="输入负责人姓名"
-                    />
+                    >
+                      <option value="">请选择负责人</option>
+                      {personnel.map((person) => (
+                        <option key={person.id} value={person.id}>
+                          {person.name}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">上报信息</label>
-                    <div className="bg-gray-50 p-3 rounded-lg">
-                      <p className="text-sm text-gray-700">
-                        <span className="font-medium">上报人:</span> {formData.reportedByName}
-                      </p>
-                    </div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">上报人 *</label>
+                    <select
+                      required
+                      value={formData.reportedBy}
+                      onChange={(e) => {
+                        const selectedId = e.target.value;
+                        const selectedPerson = personnel.find(p => p.id === selectedId);
+                        setFormData({ 
+                          ...formData, 
+                          reportedBy: selectedId, 
+                          reportedByName: selectedPerson?.name || '' 
+                        });
+                      }}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value="">请选择上报人</option>
+                      {personnel.map((person) => (
+                        <option key={person.id} value={person.id}>
+                          {person.name}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </div>
 
@@ -490,7 +585,7 @@ export default function FaultHandling() {
                     type="submit"
                     className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                   >
-                    {editingFault ? '更新' : '上报'}
+                    {editingFault ? '更新' : '上报故障隐患'}
                   </button>
                 </div>
               </form>

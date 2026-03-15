@@ -460,6 +460,13 @@ class DataStore {
     return this.instruments[index];
   }
 
+  deleteInstrument(id: string): boolean {
+    const index = this.instruments.findIndex(i => i.id === id);
+    if (index === -1) return false;
+    this.instruments.splice(index, 1);
+    return true;
+  }
+
   getFaults(): Fault[] {
     return [...this.faults];
   }

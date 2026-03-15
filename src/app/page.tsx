@@ -30,7 +30,7 @@ const modules = [
   { id: 'personnel-statistics', name: '个人工作量统计', icon: BarChart3, description: '个人工作量、工时统计和分析', route: '/personnel-statistics' },
   { id: 'instrument-info', name: '仪表基础信息', icon: Gauge, description: '仪表信息管理和快速查询', route: '/instruments' },
   { id: 'maintenance-plan', name: '维护计划管理', icon: Clock, description: '预防性和预知性维护计划管理', route: '/maintenance-plans' },
-  { id: 'fault-handling', name: '设备故障处理', icon: AlertTriangle, description: '故障上报、处理、跟踪', route: '/faults' },
+  { id: 'fault-handling', name: '设备故障隐患处理', icon: AlertTriangle, description: '故障隐患上报、处理、跟踪', route: '/faults' },
   { id: 'recycle', name: '修旧利废', icon: Recycle, description: '修旧利废记录管理和统计分析', route: '/repair-reuse' },
   { id: 'training', name: '培训计划', icon: GraduationCap, description: '培训计划创建、评估和统计', route: '/training-plans' },
   { id: 'schedule', name: '排班计划', icon: CalendarClock, description: '倒班值班场景的排班管理', route: '/schedule-plans' },

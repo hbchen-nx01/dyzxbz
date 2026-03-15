@@ -12,6 +12,7 @@ export default function InstrumentManagement() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingInstrument, setEditingInstrument] = useState<Instrument | null>(null);
+  const [personnel, setPersonnel] = useState<{ id: string; name: string }[]>([]);
   const [formData, setFormData] = useState({
     code: '',
     tag: '',
@@ -24,12 +25,25 @@ export default function InstrumentManagement() {
     specifications: {} as Record<string, string>,
     lastMaintenanceDate: '',
     nextMaintenanceDate: '',
+    assignedTo: '',
+    assignedToName: '',
   });
   const [specEntries, setSpecEntries] = useState<{ key: string; value: string }[]>([]);
 
   useEffect(() => {
     fetchInstruments();
+    fetchPersonnel();
   }, []);
+
+  const fetchPersonnel = async () => {
+    try {
+      const response = await fetch('/api/personnel');
+      const data = await response.json();
+      setPersonnel(data.map((p: any) => ({ id: p.id, name: p.name })));
+    } catch (error) {
+      console.error('Failed to fetch personnel:', error);
+    }
+  };
 
   const fetchInstruments = async () => {
     try {
@@ -68,6 +82,8 @@ export default function InstrumentManagement() {
         specifications: instrument.specifications,
         lastMaintenanceDate: instrument.lastMaintenanceDate || '',
         nextMaintenanceDate: instrument.nextMaintenanceDate || '',
+        assignedTo: instrument.assignedTo || '',
+        assignedToName: instrument.assignedToName || '',
       });
       setSpecEntries(
         Object.entries(instrument.specifications).map(([key, value]) => ({ key, value }))
@@ -86,6 +102,8 @@ export default function InstrumentManagement() {
         specifications: {},
         lastMaintenanceDate: '',
         nextMaintenanceDate: '',
+        assignedTo: '',
+        assignedToName: '',
       });
       setSpecEntries([]);
     }
@@ -127,6 +145,8 @@ export default function InstrumentManagement() {
         specifications,
         lastMaintenanceDate: formData.lastMaintenanceDate || undefined,
         nextMaintenanceDate: formData.nextMaintenanceDate || undefined,
+        assignedTo: formData.assignedTo || undefined,
+        assignedToName: formData.assignedTo ? personnel.find(p => p.id === formData.assignedTo)?.name : undefined,
       };
 
       if (editingInstrument) {
@@ -310,6 +330,7 @@ export default function InstrumentManagement() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">制造商</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">位置</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">状态</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">责任人</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">下次维护</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
                 </tr>
@@ -338,6 +359,9 @@ export default function InstrumentManagement() {
                       <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(instrument.status)}`}>
                         {getStatusText(instrument.status)}
                       </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {instrument.assignedToName || '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {instrument.nextMaintenanceDate ? formatDate(instrument.nextMaintenanceDate) : '-'}
@@ -483,6 +507,29 @@ export default function InstrumentManagement() {
                       onChange={(e) => setFormData({ ...formData, nextMaintenanceDate: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">责任人</label>
+                    <select
+                      value={formData.assignedTo}
+                      onChange={(e) => {
+                        const selectedId = e.target.value;
+                        const selectedPerson = personnel.find(p => p.id === selectedId);
+                        setFormData({ 
+                          ...formData, 
+                          assignedTo: selectedId, 
+                          assignedToName: selectedPerson?.name || '' 
+                        });
+                      }}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value="">请选择责任人</option>
+                      {personnel.map((person) => (
+                        <option key={person.id} value={person.id}>
+                          {person.name}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </div>
 

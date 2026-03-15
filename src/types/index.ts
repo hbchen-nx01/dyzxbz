@@ -100,6 +100,8 @@ export interface Instrument {
   specifications: Record<string, string>;
   lastMaintenanceDate?: string;
   nextMaintenanceDate?: string;
+  assignedTo?: string;
+  assignedToName?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -129,6 +131,7 @@ export interface Fault {
   faultNumber: string;
   instrumentId: string;
   instrumentName: string;
+  instrumentTag: string;
   instrumentLocation: string;
   faultType: string;
   description: string;
