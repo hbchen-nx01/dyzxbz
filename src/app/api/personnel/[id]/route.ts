@@ -24,7 +24,7 @@ export async function PUT(
   try {
     const body = await request.json();
     const store = DataStore.getInstance();
-    const updatedPersonnel = store.updatePersonnel(params.id, body);
+    const updatedPersonnel = await store.updatePersonnel(params.id, body);
     if (!updatedPersonnel) {
       return NextResponse.json({ error: 'Personnel not found' }, { status: 404 });
     }
@@ -40,7 +40,7 @@ export async function DELETE(
 ) {
   try {
     const store = DataStore.getInstance();
-    const success = store.deletePersonnel(params.id);
+    const success = await store.deletePersonnel(params.id);
     if (!success) {
       return NextResponse.json({ error: 'Personnel not found' }, { status: 404 });
     }

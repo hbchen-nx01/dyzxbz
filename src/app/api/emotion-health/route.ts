@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const store = DataStore.getInstance();
     
-    const record = store.createEmotionHealthRecord(body);
+    const record = await store.createEmotionHealthRecord(body);
     
     return NextResponse.json(record, { status: 201 });
   } catch (error) {
@@ -42,7 +42,7 @@ export async function PUT(request: NextRequest) {
     const { id, ...data } = body;
     
     const store = DataStore.getInstance();
-    const updatedRecord = store.updateEmotionHealthRecord(id, data);
+    const updatedRecord = await store.updateEmotionHealthRecord(id, data);
     
     if (!updatedRecord) {
       return NextResponse.json({ error: 'Record not found' }, { status: 404 });
@@ -63,7 +63,7 @@ export async function DELETE(request: NextRequest) {
     }
     
     const store = DataStore.getInstance();
-    const deleted = store.deleteEmotionHealthRecord(id);
+    const deleted = await store.deleteEmotionHealthRecord(id);
     
     if (!deleted) {
       return NextResponse.json({ error: 'Record not found' }, { status: 404 });

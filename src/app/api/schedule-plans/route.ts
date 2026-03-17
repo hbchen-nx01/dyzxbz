@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const plan = await request.json() as Omit<Schedule, 'id' | 'createdAt'>;
-    const newSchedule = dataStore.createSchedule(plan);
+    const newSchedule = await dataStore.createSchedule(plan);
     return NextResponse.json(newSchedule, { status: 201 });
   } catch (error) {
     return NextResponse.json({ error: 'Failed to create schedule plan' }, { status: 500 });

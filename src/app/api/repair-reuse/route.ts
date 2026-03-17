@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const record = await request.json() as Omit<RecycleRecord, 'id' | 'createdAt'>;
-    const newRecord = dataStore.createRecycleRecord(record);
+    const newRecord = await dataStore.createRecycleRecord(record);
     return NextResponse.json(newRecord, { status: 201 });
   } catch (error) {
     return NextResponse.json({ error: 'Failed to create repair reuse record' }, { status: 500 });

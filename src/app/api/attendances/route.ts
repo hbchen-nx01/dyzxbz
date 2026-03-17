@@ -26,7 +26,7 @@ export async function POST(request: Request) {
   try {
     const data = await request.json();
     const store = DataStore.getInstance();
-    const newAttendance = store.createAttendance(data);
+    const newAttendance = await store.createAttendance(data);
     return NextResponse.json(newAttendance, { status: 201 });
   } catch (error) {
     return NextResponse.json({ error: 'Failed to create attendance' }, { status: 500 });
@@ -43,7 +43,7 @@ export async function PUT(request: Request) {
     }
     
     const store = DataStore.getInstance();
-    const updatedAttendance = store.updateAttendance(id, updateData);
+    const updatedAttendance = await store.updateAttendance(id, updateData);
     
     if (!updatedAttendance) {
       return NextResponse.json({ error: 'Attendance not found' }, { status: 404 });

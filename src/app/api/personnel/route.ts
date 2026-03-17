@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const store = DataStore.getInstance();
-    const newPersonnel = store.createPersonnel(body);
+    const newPersonnel = await store.createPersonnel(body);
     return NextResponse.json(newPersonnel, { status: 201 });
   } catch (error) {
     return NextResponse.json({ error: 'Failed to create personnel' }, { status: 500 });

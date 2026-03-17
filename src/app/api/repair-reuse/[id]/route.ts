@@ -21,7 +21,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   try {
     const body = await request.json();
     const store = DataStore.getInstance();
-    const updatedRecord = store.updateRecycleRecord(params.id, body);
+    const updatedRecord = await store.updateRecycleRecord(params.id, body);
     if (!updatedRecord) {
       return NextResponse.json({ error: 'Repair reuse record not found' }, { status: 404 });
     }
@@ -34,7 +34,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const store = DataStore.getInstance();
-    const deleted = store.deleteRecycleRecord(params.id);
+    const deleted = await store.deleteRecycleRecord(params.id);
     if (!deleted) {
       return NextResponse.json({ error: 'Repair reuse record not found' }, { status: 404 });
     }

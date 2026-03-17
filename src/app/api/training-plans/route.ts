@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const plan = await request.json() as Omit<TrainingPlan, 'id' | 'createdAt'>;
-    const newPlan = dataStore.createTrainingPlan(plan);
+    const newPlan = await dataStore.createTrainingPlan(plan);
     return NextResponse.json(newPlan, { status: 201 });
   } catch (error) {
     return NextResponse.json({ error: 'Failed to create training plan' }, { status: 500 });

@@ -5,7 +5,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   try {
     const body = await request.json();
     const store = DataStore.getInstance();
-    const updatedFault = store.updateFault(params.id, body);
+    const updatedFault = await store.updateFault(params.id, body);
     if (!updatedFault) {
       return NextResponse.json({ error: 'Fault not found' }, { status: 404 });
     }
@@ -18,7 +18,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const store = DataStore.getInstance();
-    const deleted = store.deleteFault(params.id);
+    const deleted = await store.deleteFault(params.id);
     if (!deleted) {
       return NextResponse.json({ error: 'Fault not found' }, { status: 404 });
     }

@@ -21,6 +21,24 @@ import { join } from 'path';
 const DATA_DIR = join(process.cwd(), 'data');
 const DATA_FILE = join(DATA_DIR, 'data.json');
 
+// 尝试导入Netlify Blobs
+let getStore: any = null;
+try {
+  const blobs = require('@netlify/blobs');
+  getStore = blobs.getStore;
+  // 测试Netlify Blobs是否可用
+  try {
+    // 尝试创建一个store实例，如果失败则认为Netlify Blobs不可用
+    const store = getStore('app-data');
+  } catch (error) {
+    console.log('Netlify Blobs initialization failed, using file system storage');
+    getStore = null;
+  }
+} catch (error) {
+  // 本地开发环境可能没有Netlify Blobs
+  console.log('Netlify Blobs not available, using file system storage');
+}
+
 class DataStore {
   private static instance: DataStore;
 
@@ -39,12 +57,41 @@ class DataStore {
   private emotionHealthRecords: EmotionHealthRecord[] = [];
 
   private constructor() {
-    this.loadData();
+    // 启动时加载数据，但不等待完成
+    this.loadData().catch(error => {
+      console.error('Failed to load data during initialization:', error);
+    });
   }
 
-  private loadData() {
-    if (existsSync(DATA_FILE)) {
-      try {
+  private async loadData() {
+    try {
+      // 优先使用Netlify Blobs
+      if (getStore) {
+        console.log('Loading data from Netlify Blobs');
+        const store = getStore('app-data');
+        const dataString = await store.get('app-data');
+        if (dataString) {
+          const data = JSON.parse(dataString);
+          this.personnel = data.personnel || [];
+          this.experiences = data.experiences || [];
+          this.dailyWorks = data.dailyWorks || [];
+          this.workOrders = data.workOrders || [];
+          this.instruments = data.instruments || [];
+          this.maintenancePlans = data.maintenancePlans || [];
+          this.faults = data.faults || [];
+          this.recycleRecords = data.recycleRecords || [];
+          this.trainingPlans = data.trainingPlans || [];
+          this.schedules = data.schedules || [];
+          this.documents = data.documents || [];
+          this.attendances = data.attendances || [];
+          this.emotionHealthRecords = data.emotionHealthRecords || [];
+          return;
+        }
+      }
+      
+      // 回退到文件系统
+      console.log('Loading data from file system');
+      if (existsSync(DATA_FILE)) {
         const data = JSON.parse(readFileSync(DATA_FILE, 'utf8'));
         this.personnel = data.personnel || [];
         this.experiences = data.experiences || [];
@@ -59,19 +106,16 @@ class DataStore {
         this.documents = data.documents || [];
         this.attendances = data.attendances || [];
         this.emotionHealthRecords = data.emotionHealthRecords || [];
-      } catch (error) {
-        console.error('Failed to load data:', error);
+      } else {
         this.initializeSampleData();
       }
-    } else {
+    } catch (error) {
+      console.error('Failed to load data:', error);
       this.initializeSampleData();
     }
   }
 
-  private saveData() {
-    if (!existsSync(DATA_DIR)) {
-      mkdirSync(DATA_DIR, { recursive: true });
-    }
+  private async saveData() {
     try {
       const data = {
         personnel: this.personnel,
@@ -88,6 +132,20 @@ class DataStore {
         attendances: this.attendances,
         emotionHealthRecords: this.emotionHealthRecords,
       };
+      
+      // 优先使用Netlify Blobs
+      if (getStore) {
+        console.log('Saving data to Netlify Blobs');
+        const store = getStore('app-data');
+        await store.set('app-data', JSON.stringify(data, null, 2));
+        return;
+      }
+      
+      // 回退到文件系统
+      console.log('Saving data to file system');
+      if (!existsSync(DATA_DIR)) {
+        mkdirSync(DATA_DIR, { recursive: true });
+      }
       writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
     } catch (error) {
       console.error('Failed to save data:', error);
@@ -366,7 +424,7 @@ class DataStore {
     return this.personnel.find(p => p.id === id);
   }
 
-  createPersonnel(data: Omit<Personnel, 'id' | 'createdAt' | 'updatedAt'>): Personnel {
+  async createPersonnel(data: Omit<Personnel, 'id' | 'createdAt' | 'updatedAt'>): Promise<Personnel> {
     const newPersonnel: Personnel = {
       ...data,
       id: Date.now().toString(),
@@ -374,11 +432,11 @@ class DataStore {
       updatedAt: new Date().toISOString(),
     };
     this.personnel.push(newPersonnel);
-    this.saveData();
+    await this.saveData();
     return newPersonnel;
   }
 
-  updatePersonnel(id: string, data: Partial<Personnel>): Personnel | null {
+  async updatePersonnel(id: string, data: Partial<Personnel>): Promise<Personnel | null> {
     const index = this.personnel.findIndex(p => p.id === id);
     if (index === -1) return null;
     this.personnel[index] = {
@@ -386,15 +444,15 @@ class DataStore {
       ...data,
       updatedAt: new Date().toISOString(),
     };
-    this.saveData();
+    await this.saveData();
     return this.personnel[index];
   }
 
-  deletePersonnel(id: string): boolean {
+  async deletePersonnel(id: string): Promise<boolean> {
     const index = this.personnel.findIndex(p => p.id === id);
     if (index === -1) return false;
     this.personnel.splice(index, 1);
-    this.saveData();
+    await this.saveData();
     return true;
   }
 
@@ -402,7 +460,7 @@ class DataStore {
     return [...this.experiences];
   }
 
-  createExperience(data: Omit<ExperienceShare, 'id' | 'likes' | 'likedBy' | 'comments' | 'createdAt' | 'updatedAt'>): ExperienceShare {
+  async createExperience(data: Omit<ExperienceShare, 'id' | 'likes' | 'likedBy' | 'comments' | 'createdAt' | 'updatedAt'>): Promise<ExperienceShare> {
     const newExperience: ExperienceShare = {
       ...data,
       id: Date.now().toString(),
@@ -413,11 +471,11 @@ class DataStore {
       updatedAt: new Date().toISOString(),
     };
     this.experiences.push(newExperience);
-    this.saveData();
+    await this.saveData();
     return newExperience;
   }
 
-  likeExperience(id: string, userId: string): ExperienceShare | null {
+  async likeExperience(id: string, userId: string): Promise<ExperienceShare | null> {
     const experience = this.experiences.find(e => e.id === id);
     if (!experience) return null;
     
@@ -425,12 +483,12 @@ class DataStore {
       experience.likedBy.push(userId);
       experience.likes++;
       experience.updatedAt = new Date().toISOString();
-      this.saveData();
+      await this.saveData();
     }
     return experience;
   }
 
-  addComment(experienceId: string, comment: Omit<Comment, 'id' | 'createdAt'>): ExperienceShare | null {
+  async addComment(experienceId: string, comment: Omit<Comment, 'id' | 'createdAt'>): Promise<ExperienceShare | null> {
     const experience = this.experiences.find(e => e.id === experienceId);
     if (!experience) return null;
     
@@ -441,7 +499,7 @@ class DataStore {
     };
     experience.comments.push(newComment);
     experience.updatedAt = new Date().toISOString();
-    this.saveData();
+    await this.saveData();
     return experience;
   }
 
@@ -449,7 +507,7 @@ class DataStore {
     return [...this.dailyWorks];
   }
 
-  createDailyWork(data: Omit<DailyWork, 'id' | 'createdAt' | 'updatedAt'>): DailyWork {
+  async createDailyWork(data: Omit<DailyWork, 'id' | 'createdAt' | 'updatedAt'>): Promise<DailyWork> {
     const newDailyWork: DailyWork = {
       ...data,
       id: Date.now().toString(),
@@ -457,11 +515,11 @@ class DataStore {
       updatedAt: new Date().toISOString(),
     };
     this.dailyWorks.push(newDailyWork);
-    this.saveData();
+    await this.saveData();
     return newDailyWork;
   }
 
-  updateDailyWork(id: string, data: Partial<DailyWork>): DailyWork | null {
+  async updateDailyWork(id: string, data: Partial<DailyWork>): Promise<DailyWork | null> {
     const index = this.dailyWorks.findIndex(w => w.id === id);
     if (index === -1) return null;
     this.dailyWorks[index] = {
@@ -469,7 +527,7 @@ class DataStore {
       ...data,
       updatedAt: new Date().toISOString(),
     };
-    this.saveData();
+    await this.saveData();
     return this.dailyWorks[index];
   }
 
@@ -477,7 +535,7 @@ class DataStore {
     return [...this.workOrders];
   }
 
-  createWorkOrder(data: Omit<WorkOrder, 'id' | 'createdAt' | 'updatedAt'>): WorkOrder {
+  async createWorkOrder(data: Omit<WorkOrder, 'id' | 'createdAt' | 'updatedAt'>): Promise<WorkOrder> {
     const newWorkOrder: WorkOrder = {
       ...data,
       id: Date.now().toString(),
@@ -485,11 +543,11 @@ class DataStore {
       updatedAt: new Date().toISOString(),
     };
     this.workOrders.push(newWorkOrder);
-    this.saveData();
+    await this.saveData();
     return newWorkOrder;
   }
 
-  updateWorkOrder(id: string, data: Partial<WorkOrder>): WorkOrder | null {
+  async updateWorkOrder(id: string, data: Partial<WorkOrder>): Promise<WorkOrder | null> {
     const index = this.workOrders.findIndex(w => w.id === id);
     if (index === -1) return null;
     this.workOrders[index] = {
@@ -497,7 +555,7 @@ class DataStore {
       ...data,
       updatedAt: new Date().toISOString(),
     };
-    this.saveData();
+    await this.saveData();
     return this.workOrders[index];
   }
 
@@ -505,7 +563,7 @@ class DataStore {
     return [...this.instruments];
   }
 
-  createInstrument(data: Omit<Instrument, 'id' | 'createdAt' | 'updatedAt'>): Instrument {
+  async createInstrument(data: Omit<Instrument, 'id' | 'createdAt' | 'updatedAt'>): Promise<Instrument> {
     const newInstrument: Instrument = {
       ...data,
       id: Date.now().toString(),
@@ -513,11 +571,11 @@ class DataStore {
       updatedAt: new Date().toISOString(),
     };
     this.instruments.push(newInstrument);
-    this.saveData();
+    await this.saveData();
     return newInstrument;
   }
 
-  updateInstrument(id: string, data: Partial<Instrument>): Instrument | null {
+  async updateInstrument(id: string, data: Partial<Instrument>): Promise<Instrument | null> {
     const index = this.instruments.findIndex(i => i.id === id);
     if (index === -1) return null;
     this.instruments[index] = {
@@ -525,15 +583,15 @@ class DataStore {
       ...data,
       updatedAt: new Date().toISOString(),
     };
-    this.saveData();
+    await this.saveData();
     return this.instruments[index];
   }
 
-  deleteInstrument(id: string): boolean {
+  async deleteInstrument(id: string): Promise<boolean> {
     const index = this.instruments.findIndex(i => i.id === id);
     if (index === -1) return false;
     this.instruments.splice(index, 1);
-    this.saveData();
+    await this.saveData();
     return true;
   }
 
@@ -541,7 +599,7 @@ class DataStore {
     return [...this.faults];
   }
 
-  createFault(data: Omit<Fault, 'id' | 'createdAt' | 'updatedAt'>): Fault {
+  async createFault(data: Omit<Fault, 'id' | 'createdAt' | 'updatedAt'>): Promise<Fault> {
     const newFault: Fault = {
       ...data,
       id: Date.now().toString(),
@@ -549,11 +607,11 @@ class DataStore {
       updatedAt: new Date().toISOString(),
     };
     this.faults.push(newFault);
-    this.saveData();
+    await this.saveData();
     return newFault;
   }
 
-  updateFault(id: string, data: Partial<Fault>): Fault | null {
+  async updateFault(id: string, data: Partial<Fault>): Promise<Fault | null> {
     const index = this.faults.findIndex(f => f.id === id);
     if (index === -1) return null;
     this.faults[index] = {
@@ -561,15 +619,15 @@ class DataStore {
       ...data,
       updatedAt: new Date().toISOString(),
     };
-    this.saveData();
+    await this.saveData();
     return this.faults[index];
   }
 
-  deleteFault(id: string): boolean {
+  async deleteFault(id: string): Promise<boolean> {
     const index = this.faults.findIndex(f => f.id === id);
     if (index === -1) return false;
     this.faults.splice(index, 1);
-    this.saveData();
+    await this.saveData();
     return true;
   }
 
@@ -577,7 +635,7 @@ class DataStore {
     return [...this.maintenancePlans];
   }
 
-  createMaintenancePlan(data: Omit<MaintenancePlan, 'id' | 'createdAt' | 'updatedAt'>): MaintenancePlan {
+  async createMaintenancePlan(data: Omit<MaintenancePlan, 'id' | 'createdAt' | 'updatedAt'>): Promise<MaintenancePlan> {
     const newPlan: MaintenancePlan = {
       ...data,
       id: Date.now().toString(),
@@ -585,11 +643,11 @@ class DataStore {
       updatedAt: new Date().toISOString(),
     };
     this.maintenancePlans.push(newPlan);
-    this.saveData();
+    await this.saveData();
     return newPlan;
   }
 
-  updateMaintenancePlan(id: string, data: Partial<MaintenancePlan>): MaintenancePlan | null {
+  async updateMaintenancePlan(id: string, data: Partial<MaintenancePlan>): Promise<MaintenancePlan | null> {
     const index = this.maintenancePlans.findIndex(p => p.id === id);
     if (index === -1) return null;
     this.maintenancePlans[index] = {
@@ -597,7 +655,7 @@ class DataStore {
       ...data,
       updatedAt: new Date().toISOString(),
     };
-    this.saveData();
+    await this.saveData();
     return this.maintenancePlans[index];
   }
 
@@ -605,7 +663,7 @@ class DataStore {
     return [...this.recycleRecords];
   }
 
-  createRecycleRecord(data: Omit<RecycleRecord, 'id' | 'createdAt' | 'updatedAt'>): RecycleRecord {
+  async createRecycleRecord(data: Omit<RecycleRecord, 'id' | 'createdAt' | 'updatedAt'>): Promise<RecycleRecord> {
     const newRecord: RecycleRecord = {
       ...data,
       id: Date.now().toString(),
@@ -613,11 +671,11 @@ class DataStore {
       updatedAt: new Date().toISOString(),
     };
     this.recycleRecords.push(newRecord);
-    this.saveData();
+    await this.saveData();
     return newRecord;
   }
 
-  updateRecycleRecord(id: string, data: Partial<RecycleRecord>): RecycleRecord | null {
+  async updateRecycleRecord(id: string, data: Partial<RecycleRecord>): Promise<RecycleRecord | null> {
     const index = this.recycleRecords.findIndex(r => r.id === id);
     if (index === -1) return null;
     this.recycleRecords[index] = {
@@ -625,15 +683,15 @@ class DataStore {
       ...data,
       updatedAt: new Date().toISOString(),
     };
-    this.saveData();
+    await this.saveData();
     return this.recycleRecords[index];
   }
 
-  deleteRecycleRecord(id: string): boolean {
+  async deleteRecycleRecord(id: string): Promise<boolean> {
     const index = this.recycleRecords.findIndex(r => r.id === id);
     if (index === -1) return false;
     this.recycleRecords.splice(index, 1);
-    this.saveData();
+    await this.saveData();
     return true;
   }
 
@@ -641,7 +699,7 @@ class DataStore {
     return [...this.trainingPlans];
   }
 
-  createTrainingPlan(data: Omit<TrainingPlan, 'id' | 'createdAt' | 'updatedAt'>): TrainingPlan {
+  async createTrainingPlan(data: Omit<TrainingPlan, 'id' | 'createdAt' | 'updatedAt'>): Promise<TrainingPlan> {
     const newPlan: TrainingPlan = {
       ...data,
       id: Date.now().toString(),
@@ -649,11 +707,11 @@ class DataStore {
       updatedAt: new Date().toISOString(),
     };
     this.trainingPlans.push(newPlan);
-    this.saveData();
+    await this.saveData();
     return newPlan;
   }
 
-  updateTrainingPlan(id: string, data: Partial<TrainingPlan>): TrainingPlan | null {
+  async updateTrainingPlan(id: string, data: Partial<TrainingPlan>): Promise<TrainingPlan | null> {
     const index = this.trainingPlans.findIndex(p => p.id === id);
     if (index === -1) return null;
     this.trainingPlans[index] = {
@@ -661,7 +719,7 @@ class DataStore {
       ...data,
       updatedAt: new Date().toISOString(),
     };
-    this.saveData();
+    await this.saveData();
     return this.trainingPlans[index];
   }
 
@@ -669,7 +727,7 @@ class DataStore {
     return [...this.schedules];
   }
 
-  createSchedule(data: Omit<Schedule, 'id' | 'createdAt' | 'updatedAt'>): Schedule {
+  async createSchedule(data: Omit<Schedule, 'id' | 'createdAt' | 'updatedAt'>): Promise<Schedule> {
     const newSchedule: Schedule = {
       ...data,
       id: Date.now().toString(),
@@ -677,7 +735,7 @@ class DataStore {
       updatedAt: new Date().toISOString(),
     };
     this.schedules.push(newSchedule);
-    this.saveData();
+    await this.saveData();
     return newSchedule;
   }
 
@@ -685,7 +743,7 @@ class DataStore {
     return [...this.documents];
   }
 
-  createDocument(data: Omit<Document, 'id' | 'downloadCount' | 'createdAt' | 'updatedAt'>): Document {
+  async createDocument(data: Omit<Document, 'id' | 'downloadCount' | 'createdAt' | 'updatedAt'>): Promise<Document> {
     const newDocument: Document = {
       ...data,
       id: Date.now().toString(),
@@ -694,16 +752,16 @@ class DataStore {
       updatedAt: new Date().toISOString(),
     };
     this.documents.push(newDocument);
-    this.saveData();
+    await this.saveData();
     return newDocument;
   }
 
-  incrementDocumentDownloadCount(id: string): Document | null {
+  async incrementDocumentDownloadCount(id: string): Promise<Document | null> {
     const document = this.documents.find(d => d.id === id);
     if (!document) return null;
     document.downloadCount++;
     document.updatedAt = new Date().toISOString();
-    this.saveData();
+    await this.saveData();
     return document;
   }
 
@@ -722,7 +780,7 @@ class DataStore {
     return this.attendances.find(a => a.personnelId === personnelId && a.date === date);
   }
 
-  createAttendance(data: Omit<Attendance, 'id' | 'createdAt' | 'updatedAt'>): Attendance {
+  async createAttendance(data: Omit<Attendance, 'id' | 'createdAt' | 'updatedAt'>): Promise<Attendance> {
     const newAttendance: Attendance = {
       ...data,
       id: Date.now().toString(),
@@ -730,11 +788,11 @@ class DataStore {
       updatedAt: new Date().toISOString(),
     };
     this.attendances.push(newAttendance);
-    this.saveData();
+    await this.saveData();
     return newAttendance;
   }
 
-  updateAttendance(id: string, data: Partial<Attendance>): Attendance | null {
+  async updateAttendance(id: string, data: Partial<Attendance>): Promise<Attendance | null> {
     const index = this.attendances.findIndex(a => a.id === id);
     if (index === -1) return null;
     this.attendances[index] = {
@@ -742,15 +800,15 @@ class DataStore {
       ...data,
       updatedAt: new Date().toISOString(),
     };
-    this.saveData();
+    await this.saveData();
     return this.attendances[index];
   }
 
-  deleteAttendance(id: string): boolean {
+  async deleteAttendance(id: string): Promise<boolean> {
     const index = this.attendances.findIndex(a => a.id === id);
     if (index === -1) return false;
     this.attendances.splice(index, 1);
-    this.saveData();
+    await this.saveData();
     return true;
   }
 
@@ -805,7 +863,7 @@ class DataStore {
     return this.emotionHealthRecords.filter(record => record.personnelId === personnelId);
   }
 
-  createEmotionHealthRecord(data: Omit<EmotionHealthRecord, 'id' | 'createdAt' | 'updatedAt'>): EmotionHealthRecord {
+  async createEmotionHealthRecord(data: Omit<EmotionHealthRecord, 'id' | 'createdAt' | 'updatedAt'>): Promise<EmotionHealthRecord> {
     const newRecord: EmotionHealthRecord = {
       ...data,
       id: Date.now().toString(),
@@ -813,11 +871,11 @@ class DataStore {
       updatedAt: new Date().toISOString(),
     };
     this.emotionHealthRecords.push(newRecord);
-    this.saveData();
+    await this.saveData();
     return newRecord;
   }
 
-  updateEmotionHealthRecord(id: string, data: Partial<EmotionHealthRecord>): EmotionHealthRecord | null {
+  async updateEmotionHealthRecord(id: string, data: Partial<EmotionHealthRecord>): Promise<EmotionHealthRecord | null> {
     const index = this.emotionHealthRecords.findIndex(r => r.id === id);
     if (index === -1) return null;
     this.emotionHealthRecords[index] = {
@@ -825,15 +883,15 @@ class DataStore {
       ...data,
       updatedAt: new Date().toISOString(),
     };
-    this.saveData();
+    await this.saveData();
     return this.emotionHealthRecords[index];
   }
 
-  deleteEmotionHealthRecord(id: string): boolean {
+  async deleteEmotionHealthRecord(id: string): Promise<boolean> {
     const index = this.emotionHealthRecords.findIndex(r => r.id === id);
     if (index === -1) return false;
     this.emotionHealthRecords.splice(index, 1);
-    this.saveData();
+    await this.saveData();
     return true;
   }
 }
