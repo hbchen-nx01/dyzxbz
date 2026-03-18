@@ -10,12 +10,10 @@
   },
   "dependencies": {
     "@netlify/blobs": "^10.7.2",
-    "@prisma/client": "^7.5.0",
     "clsx": "^2.1.1",
     "date-fns": "^3.6.0",
     "lucide-react": "^0.454.0",
     "next": "14.2.18",
-    "prisma": "^7.5.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "recharts": "^2.12.7",
